@@ -15,6 +15,7 @@ signature UTIL = sig
   val zip3 : 'a list -> 'b list -> 'c list -> ('a * 'b * 'c) list
   val unzip3 : ('a * 'b * 'c) list -> 'a list * 'b list * 'c list
   val pairUp : 'a list -> ('a * 'a) list
+  val xprod : 'a list -> 'b list -> ('a * 'b) list
   val rotate : 'a list -> 'a list
   val unrotate : 'a list -> 'a list
   val part : ('a -> bool) -> 'a list -> 'a list * 'a list
@@ -118,6 +119,13 @@ structure Util : UTIL = struct
 
   fun pairUp (x :: y :: t) = (x, y) :: pairUp t
     | pairUp _ = []
+
+  fun xprod xs ys = let
+    fun aux (x, acc) =
+      List.map (fn y => (x, y)) ys @ acc
+  in
+    List.foldl aux [] xs
+  end
 
   fun rotate [] = []
     | rotate (x :: xs) = xs @ [x]

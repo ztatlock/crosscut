@@ -43,30 +43,12 @@ fun test _ = let
     , (0, 0)
     ]
 
-  val _ =
-    assert_eq "canon 001"
-      t1
-      (Pgon.canon t1)
-
-  val _ =
-    assert_n "canon 002"
-    (fn i => t1 = (Pgon.canon (Util.ntimes Util.rotate i t1)))
-
   val s1 =
     [ (0, 1)
     , (1, 1)
     , (1, 0)
     , (0, 0)
     ]
-
-  val _ =
-    assert_eq "canon 003"
-      s1
-      (Pgon.canon s1)
-
-  val _ =
-    assert_n "canon 004"
-    (fn i => s1 = (Pgon.canon (Util.ntimes Util.rotate i s1)))
 
   val p1 =
     [ (17, 23)
@@ -81,90 +63,6 @@ fun test _ = let
     , (7, 17)
     , (2, 20)
     ]
-
-  val _ =
-    assert_eq "canon 005"
-      p1
-      (Pgon.canon p1)
-
-  val _ =
-    assert_n "canon 006"
-    (fn i => p1 = (Pgon.canon (Util.ntimes Util.rotate i p1)))
-
-  val _ =
-    Util.ntimes (fn () =>
-        let
-          val p = randPgonUniq 10 10
-        in
-          assert_eq ("canon 007.0 @ " ^ Pgon.toString p)
-            (Pgon.canon p)
-            (Pgon.canon (Util.ntimes Util.rotate (Rand.upto 10) p))
-        end
-      )
-      100
-      ()
-
-  val _ =
-    Util.ntimes (fn () =>
-        let
-          val p = randPgonUniq 100 10
-        in
-          assert_eq ("canon 007.1 @ " ^ Pgon.toString p)
-            (Pgon.canon p)
-            (Pgon.canon (Util.ntimes Util.rotate (Rand.upto 100) p))
-        end
-      )
-      10
-      ()
-
-  val _ =
-    Util.ntimes (fn () =>
-        let
-          val p = randPgonUniq 10 100
-        in
-          assert_eq ("canon 007.2 @ " ^ Pgon.toString p)
-            (Pgon.canon p)
-            (Pgon.canon (Util.ntimes Util.rotate (Rand.upto 10) p))
-        end
-      )
-      10
-      ()
-
-  val _ =
-    Util.ntimes (fn () =>
-        let
-          val p = randPgon 10 10
-          val pC = Pgon.canon p
-          val (x0, y0) = List.hd pC
-          val (x1, y1) = List.hd (List.tl pC)
-          val (xN, yN) = List.hd (List.rev pC)
-        in
-          assert ("canon 008.0 @ " ^ Pgon.toString p)
-            (List.all (fn (x, y) => y0 >= y) (List.tl pC) andalso
-             x1 >= xN andalso
-             Util.intersect p pC = p)
-        end
-      )
-      100
-      ()
-
-  val _ =
-    Util.ntimes (fn () =>
-        let
-          val p = randPgon 100 100
-          val pC = Pgon.canon p
-          val (x0, y0) = List.hd pC
-          val (x1, y1) = List.hd (List.tl pC)
-          val (xN, yN) = List.hd (List.rev pC)
-        in
-          assert ("canon 008.1 @ " ^ Pgon.toString p)
-            (List.all (fn (x, y) => y0 >= y) (List.tl pC) andalso
-             x1 >= xN andalso
-             Util.intersect p pC = p)
-        end
-      )
-      10
-      ()
 
   val _ =
     assert_eq "fold 001"
@@ -283,13 +181,17 @@ fun test _ = let
       (Pgon.midLongest p1)
       p1'
 
+
   val s1_splits =
-    [([(0, 1), (1, 1), (1, 0)]
-     ,[(1, 0), (0, 0), (0, 1)])
-    ,([(1, 1), (1, 0), (0, 0)]
-     ,[(0, 0), (0, 1), (1, 1)])
+    [ ( [(0, 1), (1, 1), (1, 0)]
+      , [(0, 0), (0, 1), (1, 0)]
+      )
+    , ( [(0, 0), (0, 1), (1, 1)]
+      , [(0, 0), (1, 1), (1, 0)]
+      )
     ]
 
+    (*
   val _ = let
     val splits = Pgon.splits s1
     val s =
@@ -308,6 +210,7 @@ fun test _ = let
       splits
       s1_splits
   end
+  *)
 
   val _ =
     Util.ntimes (fn () =>

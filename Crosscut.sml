@@ -1,7 +1,8 @@
+structure P = Params
+
 signature CROSSCUT = sig
   exception Crosscut of string
-  val xcut : string -> int -> unit
-  val xcutAnimate : string -> int -> unit
+  val xcut : P.t -> unit
 end
 
 structure Crosscut : CROSSCUT = struct
@@ -100,11 +101,6 @@ structure Crosscut : CROSSCUT = struct
     }
   end
 
-  type params =
-    { minRegion : int
-    , minMids   : int
-    }
-
   fun padRegMid r = let
     fun pad p =
       if List.length p < 8
@@ -118,33 +114,31 @@ structure Crosscut : CROSSCUT = struct
     }
   end
 
-  fun regionSplits img (r: region) = let
-    val n = 25
+  fun regionSplits img minReg (r: region) = let
+    val p = #pgon r
     fun hulls (p1, p2) =
       (Pgon.convexHull p1, Pgon.convexHull p2)
     fun filterSmall (p1, p2) acc =
-      if Pgon.size p1 > n andalso Pgon.size p2 > n
+      if Pgon.size p1 > minReg andalso Pgon.size p2 > minReg
       then (p1, p2) :: acc
       else acc
     fun mkRegions (p1, p2) =
       (mkRegion img p1, mkRegion img p2)
   in
-    r |> #pgon
-      |> Pgon.splits
+    p |> Pgon.splits
       |> List.map hulls
       |> Util.foldl filterSmall []
       |> List.map mkRegions
   end
 
-
-  fun xcutStep img ([], dones, seen) = ([], dones, seen)
-    | xcutStep img (r::rs, dones, seen) =
+  fun xcutStep img minReg ([], dones, seen) = ([], dones, seen)
+    | xcutStep img minReg (r::rs, dones, seen) =
         if Util.mem r seen then
           if Util.mem r dones
           then (rs, dones, seen)
           else (rs, r::dones, seen)
         else
-          case regionSplits img (padRegMid r)
+          case regionSplits img minReg (padRegMid r)
             of [] => (rs, r::dones, r::seen)
              | splits => let
                  val (r1, r2) = Util.extreme sumErrLt splits
@@ -169,63 +163,84 @@ structure Crosscut : CROSSCUT = struct
           then List.rev xs
           else loop (i + 1) (x + i :: x :: xs)
     val pts = loop 0 []
-    val ramp = 20
+    val ramp = 10
   in
     Util.range ramp @
     (List.map (Util.curry op+ ramp) pts)
   end
 
-  fun xcut p n = let
-    val img = PPM.read p
-    val be = OS.Path.splitBaseExt p
-    fun log regs dones i = let
-      val p' = OS.Path.joinBaseExt
-                {base = #base be ^ "-xcut", ext = #ext be}
-      val ic = Img.copy img
-      val rs = Util.sort regGt (dones @ regs)
-    in
-      composite ic rs;
-      PPM.write ic p'
-    end
-    fun loop (regs, dones, seen) i = (
-      if i >= n orelse regs = [] then (
-        log regs dones i;
-        regs @ dones
-      ) else (
-        loop (xcutStep img (regs, dones, seen)) (i + 1)
-      )
-    )
-    val rSplits = loop ([initRegion img], [], []) 0
+  fun readImg path (maxW, maxH) = let
+    val tmp = Rand.name 100 ^ ".ppm"
+    val dim = Int.toString maxW ^ "x" ^ Int.toString maxH
+    val cmd =
+      "convert"
+      ^ " -depth 8"
+      ^ " -resize " ^ dim
+      ^ " " ^ path
+      ^ " " ^ tmp
+    val _ = OS.Process.system cmd
+    val img = PPM.read tmp
   in
-    ()
+    OS.FileSys.remove tmp;
+    img
   end
-  handle (Util.Util msg) => print ("Util: " ^ msg)
 
-  fun xcutAnimate p n = let
-    val img = PPM.read p
-    val be = OS.Path.splitBaseExt p
+  fun animate frames rate out = let
+    val cmd =
+      "convert"
+      ^ " -delay " ^ Int.toString rate
+      ^ " -loop 0"
+      ^ " " ^ String.concatWith " " frames
+      ^ " " ^ out ^ ".gif"
+  in
+    OS.Process.system cmd
+  end
+
+  fun filename path =
+    path |> OS.Path.splitDirFile
+         |> #file
+         |> OS.Path.splitBaseExt
+         |> #base
+
+  fun padI i =
+    StringCvt.padLeft #"0" 5 (Int.toString i)
+
+  fun xcut (params: P.t) = let
+    val img = readImg (#path params) (#maxDim params)
+    val (w, h) = Img.dim img
+    val outPref =
+      OS.Path.joinDirFile
+       { dir = #outDir params
+       , file = filename (#path params) ^ "-xcut-"
+       }
+    val logged : string list ref = ref []
     fun log regs dones i = let
-      val pi = StringCvt.padLeft #"0" 5 (Int.toString i)
-      val b' = #base be ^ "-xcut-" ^ pi
-      val p' = OS.Path.joinBaseExt {base = b', ext = #ext be}
-      val ic = Img.copy img
+      val canvas = Img.mkimg (w, h) (0, 255, 0)
       val rs = Util.sort regGt (dones @ regs)
+      val out = outPref ^ padI i ^ ".ppm"
     in
-      composite ic rs;
-      PPM.write ic p'
+      composite canvas rs;
+      PPM.write canvas out;
+      logged := out :: !logged
     end
-    fun loop (regs, dones, seen) i = (
-      if i >= n orelse regs = [] then (
-        log regs dones i;
-        regs @ dones
+    fun loop i (regs, dones, seen) = (
+      if i >= #ncuts params orelse regs = [] then (
+        log regs dones i
       ) else (
-        if Util.mem i logPts then log regs dones i else ();
-        loop (xcutStep img (regs, dones, seen)) (i + 1)
+        if #anim params andalso Util.mem i logPts
+        then log regs dones i else ();
+        loop (i + 1)
+          (xcutStep img (#minReg params) (regs, dones, seen))
       )
     )
-    val rSplits = loop ([initRegion img], [], []) 0
   in
-    ()
+    loop 0 ([initRegion img], [], []);
+    if #anim params then (
+      animate
+        (List.rev (!logged))
+        (#rate params)
+        (outPref ^ padI (#ncuts params));
+      Util.iterl OS.FileSys.remove (!logged)
+    ) else ()
   end
-  handle (Util.Util msg) => print ("Util: " ^ msg)
 end

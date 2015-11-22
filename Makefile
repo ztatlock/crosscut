@@ -9,6 +9,12 @@ Test:
 test: Test
 	./Test
 
+profile:
+	mlton -profile time Crosscut.mlb
+
+profile-count:
+	mlton -profile count -profile-branch true Crosscut.mlb
+
 clean:
 	rm -f Crosscut Test
 

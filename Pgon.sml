@@ -4,9 +4,8 @@ signature PGON = sig
   type point = int * int
   type line = point * point
   type t = point list
-
   val toString : t -> string
-  val canon : t -> t
+
   val fold : (point -> 'a -> 'a) -> 'a -> t -> 'a
   val points : t -> point list
   val size : t -> int
@@ -19,17 +18,29 @@ signature PGON = sig
   val turn : line -> point -> turn
   val convexHull : t -> t
   val isConvexCW : t -> bool
-
-  val neighbor : t -> t -> bool
-  val join : t -> t -> t
 end
 
 structure Pgon : PGON = struct
   exception Pgon of string
+  infix |>
+  fun x |> f = f x
 
   type point = int * int
   type line = point * point
   type t = point list
+
+  fun ptString (x, y) = let
+    val sx = Int.toString x
+    val sy = Int.toString y
+  in
+    "(" ^ sx ^ ", " ^ sy ^ ")"
+  end
+
+  fun toString p = let
+    val sp = String.concatWith ", " (List.map ptString p)
+  in
+    "[" ^ sp ^ "]"
+  end
 
   fun xLt (x1, y1) (x2, y2) =
     x1 < x2 orelse (x1 = x2 andalso y1 < y2)
@@ -138,44 +149,6 @@ structure Pgon : PGON = struct
       | loop _ = true
   in
     loop (p @ p)
-  end
-
-  fun ptString (x, y) = let
-    val sx = Int.toString x
-    val sy = Int.toString y
-  in
-    "(" ^ sx ^ ", " ^ sy ^ ")"
-  end
-
-  fun toString p = let
-    val sp = String.concatWith ", " (List.map ptString p)
-  in
-    "[" ^ sp ^ "]"
-  end
-
-  infix |>
-  fun x |> f = f x
-
-  (* may not be uniq if points are repeated *)
-  fun canon p = let
-    fun rotN n = Util.ntimes Util.rotate n p
-    val nPts = List.length p
-    val rots = List.map rotN (Util.range nPts)
-    fun startsHigher ((xA, yA) :: _) ((xB, yB) :: _) =
-          yA > yB orelse (yA = yB andalso xA < xB)
-      | startsHigher _ _ =
-          false
-    val highest = Util.extreme startsHigher rots
-    val clockwise = let
-      val (xNext, _) = Util.nth highest 1
-      val (xLast, _) = Util.nth highest (nPts - 1)
-    in
-      if xNext > xLast
-      then highest
-      else List.rev (Util.rotate highest)
-    end
-  in
-    clockwise
   end
 
   fun orderLineY ((x1, y1), (x2, y2)) =
@@ -295,54 +268,29 @@ structure Pgon : PGON = struct
     val a = Array.fromList (p @ p)
     fun pieces (i, j) =
       ( lSubArr a i (j + 1)
-      , lSubArr a j (n + i + 1))
+      , lSubArr a j (n + i + 1)
+      )
   in
     List.map pieces (loop 0)
   end
 
-  (* not reflexive! *)
-  fun neighbor p1 p2 = let
-    val common = Util.intersect p1 p2
+  (* TODO debug *)
+  fun splits' p = let
+    fun aux ((v1, v2), acc) = let
+      val (ccws, _, cws) =
+        sides (v1, v2) p
+      val (p1, p2) =
+        ( convexHull (v1 :: v2 :: ccws)
+        , convexHull (v1 :: v2 :: cws)
+        )
+    in
+      if List.length p1 < 3 orelse List.length p2 < 3
+      then acc
+      else (p1, p2) :: acc
+    end
   in
-    p1 <> p2 andalso List.length common >= 2
+    Util.xprod p p
+      |> List.filter (Util.uncurry xLt)
+      |> List.foldl aux []
   end
-
-  (* buggy! *)
-  (* maybe works for non-overlapping pgons that share 1 set of contiguous points? *)
-  fun join p1 p2 = let
-    val _ = (
-      print "join:\n";
-      print "p1:\n";
-      print (toString p1);
-      print "\n";
-      print "p2:\n";
-      print (toString p2);
-      print "\n";
-      print "\n\n";
-      TextIO.flushOut TextIO.stdOut
-    )
-    val p1 = Util.until
-              (fn x => not ((Util.mem (List.hd x)) p2))
-              Util.rotate
-              (canon p1)
-    val p2 = Util.until
-              (fn x => not ((Util.mem (List.hd x)) p1))
-              Util.rotate
-              (canon p2)
-    val common = Util.intersect p1 p2
-    val p1' = Util.until
-                (Util.startsWith common)
-                Util.rotate
-                p1
-    val p2' = Util.until
-                (Util.startsWith (List.rev common))
-                Util.rotate
-                p2
-    val nc = List.length common
-    val part1 = Util.drop (nc - 1) p1'
-    val part2 = Util.drop (nc - 1) p2'
-  in
-    part1 @ part2
-  end
-
 end
