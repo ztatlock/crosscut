@@ -258,6 +258,7 @@ structure Crosscut : CROSSCUT = struct
     end
 
     fun loop i (regs, dones, seen) = (
+      Log.log ("xcut loop iter " ^ Int.toString i);
       if i >= #ncuts params then (
         Log.log "reached ncuts iterations";
         log regs dones i
