@@ -6,5 +6,7 @@ Test
 *.jpg
 *.png
 *.mkv
-times.csv
+*.mp4
+*.mov
 mlmon.out
+times.csv
