@@ -114,20 +114,25 @@ structure Crosscut : CROSSCUT = struct
     }
   end
 
-  fun regionSplits img minReg (r: region) = let
+  fun regionSplits img minReg oldSize (r: region) = let
     val p = #pgon r
     fun hulls (p1, p2) =
       (Pgon.convexHull p1, Pgon.convexHull p2)
-    fun filterSmall (p1, p2) acc =
-      if Pgon.size p1 > minReg andalso Pgon.size p2 > minReg
+    fun filterBogus (p1, p2) acc = let
+      val s1 = Pgon.size p1
+      val s2 = Pgon.size p2
+    in
+      if s1 > minReg  andalso s2 > minReg andalso
+         s1 < oldSize andalso s2 < oldSize
       then (p1, p2) :: acc
       else acc
+    end
     fun mkRegions (p1, p2) =
       (mkRegion img p1, mkRegion img p2)
   in
     p |> Pgon.splits
       |> List.map hulls
-      |> Util.foldl filterSmall []
+      |> Util.foldl filterBogus []
       |> List.map mkRegions
   end
 
@@ -151,7 +156,7 @@ structure Crosscut : CROSSCUT = struct
             then Log.log "no padding added"
             else Log.log ("adding padding:\n" ^ regionString paddedR);
 
-            case regionSplits img minReg paddedR
+            case regionSplits img minReg (#size r) paddedR
               of [] => (
                    Log.log "no splits, adding to dones";
                    (rs, r::dones, r::seen)
