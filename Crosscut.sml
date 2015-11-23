@@ -251,11 +251,13 @@ structure Crosscut : CROSSCUT = struct
     fun loop i (regs, dones, seen) = (
       Log.log ("xcut loop iter " ^ Int.toString i);
       if i >= #ncuts params then (
-        Log.log "reached ncuts iterations";
-        log regs dones i
+        Log.log "reached ncuts iters";
+        log regs dones i;
+        regs @ dones
       ) else if regs = [] then (
         Log.log "reached empty regs";
-        log regs dones i
+        log regs dones i;
+        regs @ dones
       ) else (
         if #anim params andalso Util.mem i logPts
         then log regs dones i else ();
@@ -264,14 +266,21 @@ structure Crosscut : CROSSCUT = struct
           (xcutStep img (#minReg params) (regs, dones, seen))
       )
     )
-  in
-    Log.log "begin xcut loop";
-    loop 0 ([initRegion img], [], []);
 
+    val _ = Log.log "begin xcut loop";
+    val regs = loop 0 ([initRegion img], [], []);
+    val _ = Log.log ("end xcut loop, total regions: " ^
+                       Int.toString (List.length regs))
+
+    val frames =
+      if #mirror params
+      then List.rev (!logged) @ (!logged)
+      else List.rev (!logged)
+  in
     if #anim params then (
       Log.log "animate frames";
       animate
-        (List.rev (!logged))
+        frames
         (#rate params)
         (outName (#ncuts params));
 

@@ -9,6 +9,7 @@ signature PARAMS = sig
     , minReg : int
     , bg     : Img.pixel option
     , log    : bool
+    , mirror : bool
     }
 
   val init : t
@@ -25,6 +26,7 @@ signature PARAMS = sig
   val setMinReg : int       -> t -> t
   val setBG     : Img.pixel -> t -> t
   val setLog    : bool      -> t -> t
+  val setMirror : bool      -> t -> t
 end
 
 structure Params : PARAMS = struct
@@ -41,6 +43,7 @@ structure Params : PARAMS = struct
     , minReg : int
     , bg     : Img.pixel option
     , log    : bool
+    , mirror : bool
     }
 
   val init =
@@ -53,6 +56,7 @@ structure Params : PARAMS = struct
     , minReg = 25
     , bg     = NONE
     , log    = false
+    , mirror = true
     }
 
   fun toString (ps: t) : string = let
@@ -74,6 +78,7 @@ structure Params : PARAMS = struct
       , "minReg = " ^ Int.toString (#minReg ps)
       , "bg     = " ^ bg
       , "log    = " ^ Bool.toString (#log ps)
+      , "mirror = " ^ Bool.toString (#mirror ps)
       ]
   in
     "{ " ^ String.concatWith "\n, " flds ^ "\n}"
@@ -103,6 +108,7 @@ structure Params : PARAMS = struct
     , minReg = #minReg ps
     , bg     = #bg ps
     , log    = #log ps
+    , mirror = #mirror ps
     }
 
   fun setNCuts x (ps: t) : t =
@@ -115,6 +121,7 @@ structure Params : PARAMS = struct
     , minReg = #minReg ps
     , bg     = #bg ps
     , log    = #log ps
+    , mirror = #mirror ps
     }
 
   fun setPath x (ps: t) : t =
@@ -127,6 +134,7 @@ structure Params : PARAMS = struct
     , minReg = #minReg ps
     , bg     = #bg ps
     , log    = #log ps
+    , mirror = #mirror ps
     }
 
   fun setOutDir x (ps: t) : t =
@@ -139,6 +147,7 @@ structure Params : PARAMS = struct
     , minReg = #minReg ps
     , bg     = #bg ps
     , log    = #log ps
+    , mirror = #mirror ps
     }
 
   fun setMaxDim x (ps: t) : t =
@@ -151,6 +160,7 @@ structure Params : PARAMS = struct
     , minReg = #minReg ps
     , bg     = #bg ps
     , log    = #log ps
+    , mirror = #mirror ps
     }
 
   fun setRate x (ps: t) : t =
@@ -163,6 +173,7 @@ structure Params : PARAMS = struct
     , minReg = #minReg ps
     , bg     = #bg ps
     , log    = #log ps
+    , mirror = #mirror ps
     }
 
   fun setMinReg x (ps: t) : t =
@@ -175,6 +186,7 @@ structure Params : PARAMS = struct
     , minReg = x
     , bg     = #bg ps
     , log    = #log ps
+    , mirror = #mirror ps
     }
 
   fun setBG x (ps: t) : t =
@@ -187,6 +199,7 @@ structure Params : PARAMS = struct
     , minReg = #minReg ps
     , bg     = SOME x
     , log    = #log ps
+    , mirror = #mirror ps
     }
 
   fun setLog x (ps: t) : t =
@@ -199,5 +212,19 @@ structure Params : PARAMS = struct
     , minReg = #minReg ps
     , bg     = #bg ps
     , log    = x
+    , mirror = #mirror ps
+    }
+
+  fun setMirror x (ps: t) : t =
+    { anim   = #anim ps
+    , ncuts  = #ncuts ps
+    , path   = #path ps
+    , outDir = #outDir ps
+    , maxDim = #maxDim ps
+    , rate   = #rate ps
+    , minReg = #minReg ps
+    , bg     = #bg ps
+    , log    = #log ps
+    , mirror = x
     }
 end

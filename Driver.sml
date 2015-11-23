@@ -30,6 +30,8 @@ fun parseCmdLine () = let
           (intify r, intify g, intify b) ps)
     | loop ("--log" :: xs) ps =
         loop xs (P.setLog true ps)
+    | loop ("--nomirror" :: xs) ps =
+        loop xs (P.setMirror false ps)
     | loop (x :: xs) ps =
         raise (Driver ("bogus arg: " ^ x))
 in
