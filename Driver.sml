@@ -28,8 +28,8 @@ fun parseCmdLine () = let
     | loop ("--bg" :: r :: g :: b :: xs) ps =
         loop xs (P.setBG
           (intify r, intify g, intify b) ps)
-    | loop ("--log" :: x :: xs) ps =
-        loop xs (P.setLog x ps)
+    | loop ("--log" :: xs) ps =
+        loop xs (P.setLog true ps)
     | loop (x :: xs) ps =
         raise (Driver ("bogus arg: " ^ x))
 in
@@ -39,9 +39,15 @@ end
 fun main () = let
   val ps = parseCmdLine ()
 in
-  Log.init (#log ps);
+  if #log ps
+  then Log.init (P.outPrefix ps ^ ".log")
+  else ();
   Log.log ("params = \n" ^ P.toString ps);
+
+  Log.log "begin xcut";
   Crosscut.xcut ps;
+  Log.log "end xcut";
+
   Log.close ();
   OS.Process.exit OS.Process.success
 end

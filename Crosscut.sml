@@ -222,15 +222,6 @@ structure Crosscut : CROSSCUT = struct
     OS.Process.system cmd
   end
 
-  fun filename path =
-    path |> OS.Path.splitDirFile
-         |> #file
-         |> OS.Path.splitBaseExt
-         |> #base
-
-  fun padI i =
-    StringCvt.padLeft #"0" 5 (Int.toString i)
-
   fun xcut (params: P.t) = let
     val img = readImg (#path params) (#maxDim params)
     val (w, h) = Img.dim img
@@ -238,19 +229,19 @@ structure Crosscut : CROSSCUT = struct
       Log.log ("read image, size = (" ^
                  Int.toString w ^ ", " ^ Int.toString h ^ ")")
 
+    fun outName i = let
+      val pi = StringCvt.padLeft #"0" 5 (Int.toString i)
+    in
+      P.outPrefix params ^ "-" ^ pi
+    end
     val logged : string list ref = ref []
-    val outPref =
-      OS.Path.joinDirFile
-       { dir = #outDir params
-       , file = filename (#path params) ^ "-xcut-"
-       }
     fun log regs dones i = let
       val canvas =
         case #bg params
           of SOME color => Img.mkimg (w, h) color
            | NONE => Img.copy img
       val rs = Util.sort regGt (dones @ regs)
-      val out = outPref ^ padI i ^ ".ppm"
+      val out = outName i ^ ".ppm"
     in
       composite canvas rs;
       PPM.write canvas out;
@@ -282,7 +273,7 @@ structure Crosscut : CROSSCUT = struct
       animate
         (List.rev (!logged))
         (#rate params)
-        (outPref ^ padI (#ncuts params));
+        (outName (#ncuts params));
 
       Log.log "remove animation frames";
       Util.iterl OS.FileSys.remove (!logged)

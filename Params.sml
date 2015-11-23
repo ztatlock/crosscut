@@ -8,12 +8,13 @@ signature PARAMS = sig
     , rate   : int
     , minReg : int
     , bg     : Img.pixel option
-    , log    : string option
+    , log    : bool
     }
 
   val init : t
 
-  val toString : t -> string
+  val toString  : t -> string
+  val outPrefix : t -> string
 
   val setAnim   : bool      -> t -> t
   val setNCuts  : int       -> t -> t
@@ -23,10 +24,13 @@ signature PARAMS = sig
   val setRate   : int       -> t -> t
   val setMinReg : int       -> t -> t
   val setBG     : Img.pixel -> t -> t
-  val setLog    : string    -> t -> t
+  val setLog    : bool      -> t -> t
 end
 
 structure Params : PARAMS = struct
+  infix |>
+  fun x |> f = f x
+
   type t =
     { anim   : bool
     , ncuts  : int
@@ -36,7 +40,7 @@ structure Params : PARAMS = struct
     , rate   : int
     , minReg : int
     , bg     : Img.pixel option
-    , log    : string option
+    , log    : bool
     }
 
   val init =
@@ -48,7 +52,7 @@ structure Params : PARAMS = struct
     , rate   = 30
     , minReg = 25
     , bg     = NONE
-    , log    = NONE
+    , log    = false
     }
 
   fun toString (ps: t) : string = let
@@ -60,10 +64,6 @@ structure Params : PARAMS = struct
       case #bg ps
         of NONE => "NONE"
          | SOME pxl => Img.pixelString pxl
-    val log =
-      case #log ps
-        of NONE => "NONE"
-         | SOME log => log
     val flds =
       [ "anim   = " ^ Bool.toString (#anim ps)
       , "ncuts  = " ^ Int.toString (#ncuts ps)
@@ -73,10 +73,24 @@ structure Params : PARAMS = struct
       , "rate   = " ^ Int.toString (#rate ps)
       , "minReg = " ^ Int.toString (#minReg ps)
       , "bg     = " ^ bg
-      , "log    = " ^ log
+      , "log    = " ^ Bool.toString (#log ps)
       ]
   in
     "{ " ^ String.concatWith "\n, " flds ^ "\n}"
+  end
+
+  fun outPrefix (ps: t) : string = let
+    val name =
+      ps |> #path
+         |> OS.Path.splitDirFile
+         |> #file
+         |> OS.Path.splitBaseExt
+         |> #base
+  in
+    OS.Path.joinDirFile
+      { dir = #outDir ps
+      , file = name ^ "-xcut"
+      }
   end
 
   fun setAnim x (ps: t) : t =
@@ -184,6 +198,6 @@ structure Params : PARAMS = struct
     , rate   = #rate ps
     , minReg = #minReg ps
     , bg     = #bg ps
-    , log    = SOME x
+    , log    = x
     }
 end
