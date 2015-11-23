@@ -215,7 +215,10 @@ structure Crosscut : CROSSCUT = struct
        }
     val logged : string list ref = ref []
     fun log regs dones i = let
-      val canvas = Img.mkimg (w, h) (0, 255, 0)
+      val canvas =
+        case #bg params
+          of SOME color => Img.mkimg (w, h) color
+           | NONE => Img.copy img
       val rs = Util.sort regGt (dones @ regs)
       val out = outPref ^ padI i ^ ".ppm"
     in

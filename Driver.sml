@@ -23,6 +23,9 @@ fun parseCmdLine () = let
         loop xs (P.setRate (intify x) ps)
     | loop ("--minReg" :: x :: xs) ps =
         loop xs (P.setMinReg (intify x) ps)
+    | loop ("--bg" :: r :: g :: b :: xs) ps =
+        loop xs (P.setBG
+          (intify r, intify g, intify b) ps)
     | loop (x :: xs) ps =
         raise (Driver ("bogus arg: " ^ x))
 in
