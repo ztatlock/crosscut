@@ -133,20 +133,41 @@ structure Crosscut : CROSSCUT = struct
 
   fun xcutStep img minReg ([], dones, seen) = ([], dones, seen)
     | xcutStep img minReg (r::rs, dones, seen) =
-        if Util.mem r seen then
-          if Util.mem r dones
-          then (rs, dones, seen)
-          else (rs, r::dones, seen)
-        else
-          case regionSplits img minReg (padRegMid r)
-            of [] => (rs, r::dones, r::seen)
-             | splits => let
-                 val (r1, r2) = Util.extreme sumErrLt splits
-                 val rs' = rs |> Util.insert errorGt r1
-                              |> Util.insert errorGt r2
-               in
-                 (rs', dones, r::seen)
-               end
+        if Util.mem r seen then (
+          Log.log ("previously seen region:\n" ^ regionString r);
+          if Util.mem r dones then (
+            Log.log "repeat already in dones";
+            (rs, dones, seen)
+          ) else (
+            Log.log "adding repeat to dones";
+            (rs, r::dones, seen)
+          )
+        ) else let
+            val paddedR = padRegMid r
+          in
+            Log.log ("splitting region:\n" ^ regionString r);
+
+            if r = paddedR
+            then Log.log "no padding added"
+            else Log.log ("adding padding:\n" ^ regionString paddedR);
+
+            case regionSplits img minReg paddedR
+              of [] => (
+                   Log.log "no splits, adding to dones";
+                   (rs, r::dones, r::seen)
+                 )
+               | splits => let
+                   val (r1, r2) = Util.extreme sumErrLt splits
+                   val rs' = rs |> Util.insert errorGt r1
+                                |> Util.insert errorGt r2
+                 in
+                   Log.log ("split region into:\n" ^
+                              regionString r1 ^
+                              "\n\nand:\n" ^
+                              regionString r2);
+                   (rs', dones, r::seen)
+                 end
+          end
 
   fun initRegion img = let
     val (w, h) = Img.dim img
@@ -208,12 +229,16 @@ structure Crosscut : CROSSCUT = struct
   fun xcut (params: P.t) = let
     val img = readImg (#path params) (#maxDim params)
     val (w, h) = Img.dim img
+    val _ =
+      Log.log ("read image, size = (" ^
+                 Int.toString w ^ ", " ^ Int.toString h ^ ")")
+
+    val logged : string list ref = ref []
     val outPref =
       OS.Path.joinDirFile
        { dir = #outDir params
        , file = filename (#path params) ^ "-xcut-"
        }
-    val logged : string list ref = ref []
     fun log regs dones i = let
       val canvas =
         case #bg params
@@ -226,23 +251,34 @@ structure Crosscut : CROSSCUT = struct
       PPM.write canvas out;
       logged := out :: !logged
     end
+
     fun loop i (regs, dones, seen) = (
-      if i >= #ncuts params orelse regs = [] then (
+      if i >= #ncuts params then (
+        Log.log "reached ncuts iterations";
+        log regs dones i
+      ) else if regs = [] then (
+        Log.log "reached empty regs";
         log regs dones i
       ) else (
         if #anim params andalso Util.mem i logPts
         then log regs dones i else ();
+
         loop (i + 1)
           (xcutStep img (#minReg params) (regs, dones, seen))
       )
     )
   in
+    Log.log "begin xcut loop";
     loop 0 ([initRegion img], [], []);
+
     if #anim params then (
+      Log.log "animate frames";
       animate
         (List.rev (!logged))
         (#rate params)
         (outPref ^ padI (#ncuts params));
+
+      Log.log "remove animation frames";
       Util.iterl OS.FileSys.remove (!logged)
     ) else ()
   end
