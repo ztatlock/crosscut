@@ -8,5 +8,6 @@ Test
 *.mkv
 *.mp4
 *.mov
+*.log
 mlmon.out
 times.csv
