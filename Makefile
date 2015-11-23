@@ -18,4 +18,9 @@ profile-count:
 clean:
 	rm -f Crosscut Test
 
+file-clean:
+	rm -f *.ppm *.gif *.jpg *.png
+	rm -f *.mkv *.mp4 *.mov
+	rm -f *.log mlmon.out
+
 .PHONY: all Crosscut Test test clean
