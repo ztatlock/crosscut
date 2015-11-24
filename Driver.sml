@@ -63,6 +63,8 @@ val _ =
           println ("[Util] " ^ msg)
        | PPM.PPM msg =>
            println ("[PPM] " ^ msg)
+       | Log.Log msg =>
+           println ("[Log] " ^ msg)
        | Crosscut.Crosscut msg =>
            println ("[Crosscut] " ^ msg)
        | Driver msg =>

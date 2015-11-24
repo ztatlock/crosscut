@@ -1,10 +1,13 @@
 signature LOG = sig
+  exception Log of string
   val init  : string -> unit
   val log   : string -> unit
   val close : unit -> unit
 end
 
 structure Log : LOG = struct
+  exception Log of string
+
   val logFile : TextIO.outstream option ref =
     ref NONE
 
@@ -15,6 +18,9 @@ structure Log : LOG = struct
     logFile := SOME (TextIO.openOut path);
     t0 := Time.now ()
   )
+  handle IO.Io ioe =>
+    raise (Log ("init: exception from " ^ (#function ioe)
+                ^ " while trying open log: " ^ path))
 
   fun log msg =
     case !logFile
@@ -26,6 +32,9 @@ structure Log : LOG = struct
            TextIO.output (f, msg);
            TextIO.output (f, "\n\n")
          end
+  handle IO.Io ioe =>
+    raise (Log ("log: exception from " ^ (#function ioe)
+                ^ " while trying to log entry: " ^ msg))
 
   fun close () =
     case !logFile
@@ -35,4 +44,7 @@ structure Log : LOG = struct
            logFile := NONE;
            t0 := Time.zeroTime
          )
+  handle IO.Io ioe =>
+    raise (Log ("close: exception from " ^ (#function ioe)
+                ^ " while trying to write close log"))
 end

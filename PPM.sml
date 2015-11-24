@@ -95,9 +95,13 @@ structure PPM : PPM = struct
     val _ = TextIO.closeIn f
   in
     case x
-      of NONE => raise (PPM ("readPPM: couldn't read " ^ p))
+      of NONE => raise (PPM ("read: couldn't read: " ^ p))
        | SOME i => i
   end
+  handle IO.Io ioe =>
+    raise (PPM ("read: exception from " ^ (#function ioe)
+                ^ " while trying to read: " ^ p))
+
 
   fun write (i: Img.t) p = let
     val f = TextIO.openOut p
@@ -115,4 +119,7 @@ structure PPM : PPM = struct
       write1 (Char.chr b)))) i;
     TextIO.closeOut f
   end
+  handle IO.Io ioe =>
+    raise (PPM ("write: exception from " ^ (#function ioe)
+                ^ " while trying to write: " ^ p))
 end
