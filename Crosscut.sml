@@ -196,7 +196,8 @@ structure Crosscut : CROSSCUT = struct
   end
 
   fun readImg path (maxW, maxH) = let
-    val tmp = Rand.name 100 ^ ".ppm"
+    (* TODO use tmp param *)
+    val tmp = Rand.name 10 ^ ".ppm"
     val dim = Int.toString maxW ^ "x" ^ Int.toString maxH
     val cmd =
       "convert"
@@ -208,6 +209,7 @@ structure Crosscut : CROSSCUT = struct
     val img = PPM.read tmp
   in
     OS.FileSys.remove tmp;
+    Log.log ("read image, size = " ^ Util.i2str (Img.dim img));
     img
   end
 
@@ -223,69 +225,80 @@ structure Crosscut : CROSSCUT = struct
   end
 
   fun xcut (params: P.t) = let
-    val img = readImg (#path params) (#maxDim params)
-    val (w, h) = Img.dim img
-    val _ =
-      Log.log ("read image, size = (" ^
-                 Int.toString w ^ ", " ^ Int.toString h ^ ")")
+    val img =
+      readImg (#path params) (#maxDim params)
 
-    fun outName i = let
-      val pi = StringCvt.padLeft #"0" 5 (Int.toString i)
-    in
-      P.outPrefix params ^ "-" ^ pi
-    end
-    val logged : string list ref = ref []
-    fun log regs dones i = let
+    fun writeFrame regs path = let
       val canvas =
         case #bg params
-          of SOME color => Img.mkimg (w, h) color
+          of SOME color => Img.mkimg (Img.dim img) color
            | NONE => Img.copy img
-      val rs = Util.sort regGt (dones @ regs)
-      val out = outName i ^ ".ppm"
     in
-      composite canvas rs;
-      PPM.write canvas out;
-      logged := out :: !logged
+      composite canvas regs;
+      PPM.write canvas path
+    end
+
+    val tmpPrefix =
+      "xcut-" ^ Rand.name 10 ^ "-"
+    fun tmpName i = let
+      val pi = StringCvt.padLeft #"0" 5 (Int.toString i)
+    in
+      OS.Path.joinDirFile
+        { dir = #tmpDir params
+        , file = tmpPrefix ^ pi ^ ".ppm"
+        }
+    end
+
+    val animFrames : string list ref =
+      ref []
+    fun writeAnimFrame regs dones i = let
+      val af = tmpName i
+    in
+      if #anim params andalso Util.mem i logPts then (
+        Log.log ("writing animation frame: " ^ af);
+        writeFrame (dones @ regs) af;
+        animFrames := af :: !animFrames
+      ) else ()
     end
 
     fun loop i (regs, dones, seen) = (
-      Log.log ("xcut loop iter " ^ Int.toString i);
-      if i >= #ncuts params then (
-        Log.log "reached ncuts iters";
-        log regs dones i;
+      Log.log ("xcut loop i = " ^ Int.toString i);
+      writeAnimFrame regs dones i;
+      if i >= #ncuts params orelse regs = [] then
         regs @ dones
-      ) else if regs = [] then (
-        Log.log "reached empty regs";
-        log regs dones i;
-        regs @ dones
-      ) else (
-        if #anim params andalso Util.mem i logPts
-        then log regs dones i else ();
-
-        loop (i + 1)
-          (xcutStep img (#minReg params) (regs, dones, seen))
-      )
+      else
+        loop (i + 1) (xcutStep img (#minReg params) (regs, dones, seen))
     )
 
-    val _ = Log.log "begin xcut loop";
-    val regs = loop 0 ([initRegion img], [], []);
+    val regs = loop 0 ([initRegion img], [], [])
     val _ = Log.log ("end xcut loop, total regions: " ^
                        Int.toString (List.length regs))
 
-    val frames =
-      if #mirror params
-      then List.rev (!logged) @ (!logged)
-      else List.rev (!logged)
+    val outName = let
+      val s = Int.toString (#ncuts params)
+      val p = StringCvt.padLeft #"0" 5 s
+    in
+      P.outPrefix params ^ "-" ^ p
+    end
   in
-    if #anim params then (
+    if #anim params then let
+      val frames =
+        if #mirror params
+        then List.rev (!animFrames) @ (!animFrames)
+        else List.rev (!animFrames)
+    in
       Log.log "animate frames";
       animate
         frames
         (#rate params)
-        (outName (#ncuts params));
+        outName;
 
       Log.log "remove animation frames";
-      Util.iterl OS.FileSys.remove (!logged)
-    ) else ()
+      Util.iterl OS.FileSys.remove (!animFrames)
+    end
+    else (
+      Log.log "write final output frame";
+      writeFrame regs (outName ^ ".ppm")
+    )
   end
 end

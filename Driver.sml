@@ -17,6 +17,8 @@ fun parseCmdLine () = let
         loop xs (P.setPath x ps)
     | loop ("--outDir" :: x :: xs) ps =
         loop xs (P.setOutDir x ps)
+    | loop ("--tmpDir" :: x :: xs) ps =
+        loop xs (P.setTmpDir x ps)
     | loop ("--maxDim" :: w :: h :: xs) ps =
         loop xs (P.setMaxDim (intify w, intify h) ps)
     | loop ("--maxDim2" :: x :: xs) ps =

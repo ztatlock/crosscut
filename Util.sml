@@ -43,6 +43,10 @@ signature UTIL = sig
   val app2xy : ((int * int) * 'a * 'b -> unit) ->
                'a array array -> 'b array array -> unit
   val bench : (unit -> 'a) -> int
+
+  val i2str : (int * int) -> string
+  val i3str : (int * int * int) -> string
+  val lstr  : ('a -> string) -> 'a list -> string
 end
 
 structure Util : UTIL = struct
@@ -256,5 +260,22 @@ structure Util : UTIL = struct
     val m  = Time.toMilliseconds (Time.- (t1, t0))
   in
     LargeInt.toInt m
+  end
+
+  fun i2str (a, b) =
+      "("  ^ Int.toString a
+    ^ ", " ^ Int.toString b
+    ^ ")"
+
+  fun i3str (a, b, c) =
+      "("  ^ Int.toString a
+    ^ ", " ^ Int.toString b
+    ^ ", " ^ Int.toString c
+    ^ ")"
+
+  fun lstr fmt l = let
+    val s = String.concatWith ", " (List.map fmt l)
+  in
+    "[" ^ s ^ "]"
   end
 end

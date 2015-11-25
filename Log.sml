@@ -28,7 +28,7 @@ structure Log : LOG = struct
        | SOME f => let
            val dt = Time.- (Time.now (), !t0)
          in
-           TextIO.output (f, "@ " ^ Time.toString dt ^ ": \n");
+           TextIO.output (f, "@ " ^ Time.toString dt ^ ":\n");
            TextIO.output (f, msg);
            TextIO.output (f, "\n\n")
          end

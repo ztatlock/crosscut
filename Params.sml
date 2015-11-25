@@ -4,6 +4,7 @@ signature PARAMS = sig
     , ncuts  : int
     , path   : string
     , outDir : string
+    , tmpDir : string
     , maxDim : int * int
     , rate   : int
     , minReg : int
@@ -21,6 +22,7 @@ signature PARAMS = sig
   val setNCuts  : int       -> t -> t
   val setPath   : string    -> t -> t
   val setOutDir : string    -> t -> t
+  val setTmpDir : string    -> t -> t
   val setMaxDim : int * int -> t -> t
   val setRate   : int       -> t -> t
   val setMinReg : int       -> t -> t
@@ -38,6 +40,7 @@ structure Params : PARAMS = struct
     , ncuts  : int
     , path   : string
     , outDir : string
+    , tmpDir : string
     , maxDim : int * int
     , rate   : int
     , minReg : int
@@ -51,8 +54,9 @@ structure Params : PARAMS = struct
     , ncuts  = 1000
     , path   = ""
     , outDir = "."
+    , tmpDir = "/tmp"
     , maxDim = (500, 500)
-    , rate   = 30
+    , rate   = 40
     , minReg = 25
     , bg     = NONE
     , log    = false
@@ -60,10 +64,6 @@ structure Params : PARAMS = struct
     }
 
   fun toString (ps: t) : string = let
-    val maxDim =
-      "("  ^ Int.toString (#1 (#maxDim ps)) ^
-      ", " ^ Int.toString (#2 (#maxDim ps)) ^
-      ")"
     val bg =
       case #bg ps
         of NONE => "NONE"
@@ -73,7 +73,8 @@ structure Params : PARAMS = struct
       , "ncuts  = " ^ Int.toString (#ncuts ps)
       , "path   = " ^ #path ps
       , "outDir = " ^ #outDir ps
-      , "maxDim = " ^ maxDim
+      , "tmpDir = " ^ #tmpDir ps
+      , "maxDim = " ^ Util.i2str (#maxDim ps)
       , "rate   = " ^ Int.toString (#rate ps)
       , "minReg = " ^ Int.toString (#minReg ps)
       , "bg     = " ^ bg
@@ -103,6 +104,7 @@ structure Params : PARAMS = struct
     , ncuts  = #ncuts ps
     , path   = #path ps
     , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
     , maxDim = #maxDim ps
     , rate   = #rate ps
     , minReg = #minReg ps
@@ -116,6 +118,7 @@ structure Params : PARAMS = struct
     , ncuts  = x
     , path   = #path ps
     , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
     , maxDim = #maxDim ps
     , rate   = #rate ps
     , minReg = #minReg ps
@@ -129,6 +132,7 @@ structure Params : PARAMS = struct
     , ncuts  = #ncuts ps
     , path   = x
     , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
     , maxDim = #maxDim ps
     , rate   = #rate ps
     , minReg = #minReg ps
@@ -142,6 +146,7 @@ structure Params : PARAMS = struct
     , ncuts  = #ncuts ps
     , path   = #path ps
     , outDir = x
+    , tmpDir = #tmpDir ps
     , maxDim = #maxDim ps
     , rate   = #rate ps
     , minReg = #minReg ps
@@ -150,11 +155,27 @@ structure Params : PARAMS = struct
     , mirror = #mirror ps
     }
 
+  fun setTmpDir x (ps: t) : t =
+    { anim   = #anim ps
+    , ncuts  = #ncuts ps
+    , path   = #path ps
+    , outDir = #tmpDir ps
+    , tmpDir = x
+    , maxDim = #maxDim ps
+    , rate   = #rate ps
+    , minReg = #minReg ps
+    , bg     = #bg ps
+    , log    = #log ps
+    , mirror = #mirror ps
+    }
+
+
   fun setMaxDim x (ps: t) : t =
     { anim   = #anim ps
     , ncuts  = #ncuts ps
     , path   = #path ps
     , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
     , maxDim = x
     , rate   = #rate ps
     , minReg = #minReg ps
@@ -168,6 +189,7 @@ structure Params : PARAMS = struct
     , ncuts  = #ncuts ps
     , path   = #path ps
     , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
     , maxDim = #maxDim ps
     , rate   = x
     , minReg = #minReg ps
@@ -181,6 +203,7 @@ structure Params : PARAMS = struct
     , ncuts  = #ncuts ps
     , path   = #path ps
     , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
     , maxDim = #maxDim ps
     , rate   = #rate ps
     , minReg = x
@@ -194,6 +217,7 @@ structure Params : PARAMS = struct
     , ncuts  = #ncuts ps
     , path   = #path ps
     , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
     , maxDim = #maxDim ps
     , rate   = #rate ps
     , minReg = #minReg ps
@@ -207,6 +231,7 @@ structure Params : PARAMS = struct
     , ncuts  = #ncuts ps
     , path   = #path ps
     , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
     , maxDim = #maxDim ps
     , rate   = #rate ps
     , minReg = #minReg ps
@@ -220,6 +245,7 @@ structure Params : PARAMS = struct
     , ncuts  = #ncuts ps
     , path   = #path ps
     , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
     , maxDim = #maxDim ps
     , rate   = #rate ps
     , minReg = #minReg ps
