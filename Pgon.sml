@@ -178,19 +178,29 @@ structure Pgon : PGON = struct
 
   fun fold f init p = let
     fun groupSortedY [] = []
-      | groupSortedY pts = let
-          val ys = List.map #2 pts
-          val y0 = Util.extreme (Util.curry op<) ys
-          val yN = Util.extreme (Util.curry op>) ys
+      | groupSortedY ((px1, py1) :: pts) = let
+          fun aux ((x, y), (y0, yN)) =
+            if y < y0 then
+              (y, yN)
+            else if y > yN then
+              (y0, y)
+            else
+              (y0, yN)
+          val (y0, yN) = List.foldl aux (py1, py1) pts
           val t = Array.array (yN - y0 + 1, [])
+          fun insX x [] = [x]
+            | insX x (h::t) =
+                if x < h
+                then x :: h :: t
+                else h :: insX x t
           fun aux (x, y) = let
             val i = y - y0
             val xs = Array.sub (t, i)
           in
-            Array.update (t, i, Util.insert (Util.curry op<) x xs)
+            Array.update (t, i, insX x xs)
           end
         in
-          Util.iterl aux pts;
+          Util.iterl aux ((px1, py1) :: pts);
           Array.foldli
             (fn (i, xs, acc) => (y0 + i, xs) :: acc)
             []
@@ -212,11 +222,11 @@ structure Pgon : PGON = struct
       |> List.foldl aux init
   end
 
+  fun size p =
+    fold (fn _ => fn s => s + 1) 0 p
+
   fun points p =
     fold (Util.curry op::) [] p
-
-  fun size p =
-    List.length (points p)
 
   fun appXY f p =
     fold (fn pt => fn _ => f pt) () p

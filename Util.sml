@@ -196,9 +196,7 @@ structure Util : UTIL = struct
 
   fun round r =
     Real.round r
-    (*
     handle Domain => 0 (* TODO bogus *)
-    *)
 
   fun cmpR r1 r2 =
     case Real.compare (r1, r2)

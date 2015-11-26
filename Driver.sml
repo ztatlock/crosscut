@@ -32,8 +32,10 @@ fun parseCmdLine () = let
           (intify r, intify g, intify b) ps)
     | loop ("--log" :: xs) ps =
         loop xs (P.setLog true ps)
-    | loop ("--nomirror" :: xs) ps =
+    | loop ("--noMirror" :: xs) ps =
         loop xs (P.setMirror false ps)
+    | loop ("--rawVid" :: p1 :: p2 :: xs) ps =
+        loop xs (P.setRawVid (p1, p2) ps)
     | loop (x :: xs) ps =
         raise (Driver ("bogus arg: " ^ x))
 in
@@ -48,9 +50,18 @@ in
   else ();
   Log.log ("params = \n" ^ P.toString ps);
 
-  Log.log "begin xcut";
-  Crosscut.xcut ps;
-  Log.log "end xcut";
+  case #rawVid ps
+    of SOME (p1, p2) => let
+         val f1 = BinIO.openIn p1
+         val f2 = BinIO.openOut p2
+       in
+         XCutRaw.xcut (f1, f2, ps)
+       end
+     | NONE => (
+         Log.log "begin xcut";
+         Crosscut.xcut ps;
+         Log.log "end xcut"
+       );
 
   Log.close ();
   OS.Process.exit OS.Process.success
@@ -63,11 +74,15 @@ val _ =
   (main () handle e => (Log.close (); raise e))
   handle Util.Util msg =>
           println ("[Util] " ^ msg)
+       | Img.Img msg =>
+           println ("[Img] " ^ msg)
        | PPM.PPM msg =>
            println ("[PPM] " ^ msg)
        | Log.Log msg =>
            println ("[Log] " ^ msg)
        | Crosscut.Crosscut msg =>
            println ("[Crosscut] " ^ msg)
+       | XCutRaw.XCutRaw msg =>
+           println ("[XCutRaw] " ^ msg)
        | Driver msg =>
            println ("[Driver] " ^ msg)

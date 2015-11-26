@@ -1,4 +1,6 @@
 signature IMG = sig
+  exception Img of string
+
   type coord = int * int
   type pixel = int * int * int
   type t = pixel array array
@@ -20,9 +22,14 @@ signature IMG = sig
   val appXY : (coord -> pixel -> unit) -> t -> unit
   val mixPix : pixel list -> pixel
   val merge : t list -> t
+
+  val rawRead : BinIO.instream -> (int * int) -> t option
+  val rawWrite : BinIO.outstream -> t -> unit
 end
 
 structure Img : IMG = struct
+  exception Img of string
+
   type coord = int * int
   type pixel = int * int * int
   type t = pixel array array
@@ -103,4 +110,47 @@ structure Img : IMG = struct
       in
         img'
       end
+
+  fun rawRead f (w, h) = let
+    val n = w * h * 3
+    val d = BinIO.inputN (f, n)
+    fun pxl (i, j) = let
+      val y = i * w + j
+      val x = y * 3
+      val r = Word8Vector.sub (d, x + 0)
+      val g = Word8Vector.sub (d, x + 1)
+      val b = Word8Vector.sub (d, x + 2)
+    in
+      ( Word8.toInt r
+      , Word8.toInt g
+      , Word8.toInt b
+      )
+    end
+  in
+    if Word8Vector.length d < n
+    then NONE
+    else SOME (
+      Array.tabulate (h, fn i =>
+        Array.tabulate (w, fn j =>
+          pxl (i, j))))
+  end
+
+  fun rawWrite f img = let
+    val (w, h) = dim img
+    val n = w * h * 3
+    fun byt x = let
+      val y = x div 3
+      val (i, j) = (y mod w, y div w)
+      val (r, g, b) = get img (i, j)
+    in
+      case x mod 3
+        of 0 => Word8.fromInt r
+         | 1 => Word8.fromInt g
+         | 2 => Word8.fromInt b
+         | _ => raise (Img "rawWrite: impossible")
+    end
+    val d = Word8Vector.tabulate (n, byt)
+  in
+    BinIO.output (f, d)
+  end
 end

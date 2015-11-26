@@ -1,4 +1,7 @@
 signature PARAMS = sig
+  type pipe =
+    string * string
+
   type t =
     { anim   : bool
     , ncuts  : int
@@ -11,6 +14,7 @@ signature PARAMS = sig
     , bg     : Img.pixel option
     , log    : bool
     , mirror : bool
+    , rawVid : pipe option
     }
 
   val init : t
@@ -29,11 +33,15 @@ signature PARAMS = sig
   val setBG     : Img.pixel -> t -> t
   val setLog    : bool      -> t -> t
   val setMirror : bool      -> t -> t
+  val setRawVid : pipe      -> t -> t
 end
 
 structure Params : PARAMS = struct
   infix |>
   fun x |> f = f x
+
+  type pipe =
+    string * string
 
   type t =
     { anim   : bool
@@ -47,6 +55,7 @@ structure Params : PARAMS = struct
     , bg     : Img.pixel option
     , log    : bool
     , mirror : bool
+    , rawVid : pipe option
     }
 
   val init =
@@ -61,6 +70,7 @@ structure Params : PARAMS = struct
     , bg     = NONE
     , log    = false
     , mirror = true
+    , rawVid = NONE
     }
 
   fun toString (ps: t) : string = let
@@ -68,6 +78,10 @@ structure Params : PARAMS = struct
       case #bg ps
         of NONE => "NONE"
          | SOME pxl => Img.pixelString pxl
+    val rv =
+      case #rawVid ps
+        of NONE => "NONE"
+         | SOME (p1, p2) => "(" ^ p1 ^ ", " ^ p2 ^ ")"
     val flds =
       [ "anim   = " ^ Bool.toString (#anim ps)
       , "ncuts  = " ^ Int.toString (#ncuts ps)
@@ -80,18 +94,23 @@ structure Params : PARAMS = struct
       , "bg     = " ^ bg
       , "log    = " ^ Bool.toString (#log ps)
       , "mirror = " ^ Bool.toString (#mirror ps)
+      , "rawVid = " ^ rv
       ]
   in
     "{ " ^ String.concatWith "\n, " flds ^ "\n}"
   end
 
   fun outPrefix (ps: t) : string = let
-    val name =
+    val x =
       ps |> #path
          |> OS.Path.splitDirFile
          |> #file
          |> OS.Path.splitBaseExt
          |> #base
+    val name =
+      if x = ""
+      then "anon"
+      else x
   in
     OS.Path.joinDirFile
       { dir = #outDir ps
@@ -111,6 +130,7 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = #log ps
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
   fun setNCuts x (ps: t) : t =
@@ -125,6 +145,7 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = #log ps
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
   fun setPath x (ps: t) : t =
@@ -139,6 +160,7 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = #log ps
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
   fun setOutDir x (ps: t) : t =
@@ -153,6 +175,7 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = #log ps
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
   fun setTmpDir x (ps: t) : t =
@@ -167,6 +190,7 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = #log ps
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
 
@@ -182,6 +206,7 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = #log ps
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
   fun setRate x (ps: t) : t =
@@ -196,6 +221,7 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = #log ps
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
   fun setMinReg x (ps: t) : t =
@@ -210,6 +236,7 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = #log ps
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
   fun setBG x (ps: t) : t =
@@ -224,6 +251,7 @@ structure Params : PARAMS = struct
     , bg     = SOME x
     , log    = #log ps
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
   fun setLog x (ps: t) : t =
@@ -238,6 +266,7 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = x
     , mirror = #mirror ps
+    , rawVid = #rawVid ps
     }
 
   fun setMirror x (ps: t) : t =
@@ -252,5 +281,21 @@ structure Params : PARAMS = struct
     , bg     = #bg ps
     , log    = #log ps
     , mirror = x
+    , rawVid = #rawVid ps
+    }
+
+  fun setRawVid x (ps: t) : t =
+    { anim   = #anim ps
+    , ncuts  = #ncuts ps
+    , path   = #path ps
+    , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
+    , maxDim = #maxDim ps
+    , rate   = #rate ps
+    , minReg = #minReg ps
+    , bg     = #bg ps
+    , log    = #log ps
+    , mirror = #mirror ps
+    , rawVid = SOME x
     }
 end

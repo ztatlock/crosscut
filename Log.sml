@@ -30,7 +30,8 @@ structure Log : LOG = struct
          in
            TextIO.output (f, "@ " ^ Time.toString dt ^ ":\n");
            TextIO.output (f, msg);
-           TextIO.output (f, "\n\n")
+           TextIO.output (f, "\n\n");
+           TextIO.flushOut f
          end
   handle IO.Io ioe =>
     raise (Log ("log: exception from " ^ (#function ioe)

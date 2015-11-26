@@ -1,6 +1,7 @@
 signature RAND = sig
   val upto    : int -> int
   val elt     : 'a list -> 'a
+  val cmp     : 'a -> 'a -> bool
   val shuffle : 'a list -> 'a list
   val name    : int -> string
 end
