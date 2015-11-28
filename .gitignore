@@ -9,5 +9,6 @@ Test
 *.mp4
 *.mov
 *.log
+*.txt
 mlmon.out
 times.csv

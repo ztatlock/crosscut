@@ -15,6 +15,7 @@ signature PARAMS = sig
     , log    : bool
     , mirror : bool
     , rawVid : pipe option
+    , markov : int option
     }
 
   val init : t
@@ -34,6 +35,7 @@ signature PARAMS = sig
   val setLog    : bool      -> t -> t
   val setMirror : bool      -> t -> t
   val setRawVid : pipe      -> t -> t
+  val setMarkov : int       -> t -> t
 end
 
 structure Params : PARAMS = struct
@@ -56,6 +58,7 @@ structure Params : PARAMS = struct
     , log    : bool
     , mirror : bool
     , rawVid : pipe option
+    , markov : int option
     }
 
   val init =
@@ -71,6 +74,7 @@ structure Params : PARAMS = struct
     , log    = false
     , mirror = true
     , rawVid = NONE
+    , markov = NONE
     }
 
   fun toString (ps: t) : string = let
@@ -82,6 +86,10 @@ structure Params : PARAMS = struct
       case #rawVid ps
         of NONE => "NONE"
          | SOME (p1, p2) => "(" ^ p1 ^ ", " ^ p2 ^ ")"
+    val markov =
+      case #markov ps
+        of NONE => "NONE"
+         | SOME i => Int.toString i
     val flds =
       [ "anim   = " ^ Bool.toString (#anim ps)
       , "ncuts  = " ^ Int.toString (#ncuts ps)
@@ -95,6 +103,7 @@ structure Params : PARAMS = struct
       , "log    = " ^ Bool.toString (#log ps)
       , "mirror = " ^ Bool.toString (#mirror ps)
       , "rawVid = " ^ rv
+      , "markov = " ^ markov
       ]
   in
     "{ " ^ String.concatWith "\n, " flds ^ "\n}"
@@ -131,6 +140,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setNCuts x (ps: t) : t =
@@ -146,6 +156,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setPath x (ps: t) : t =
@@ -161,6 +172,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setOutDir x (ps: t) : t =
@@ -176,6 +188,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setTmpDir x (ps: t) : t =
@@ -191,6 +204,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
 
@@ -207,6 +221,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setRate x (ps: t) : t =
@@ -222,6 +237,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setMinReg x (ps: t) : t =
@@ -237,6 +253,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setBG x (ps: t) : t =
@@ -252,6 +269,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setLog x (ps: t) : t =
@@ -267,6 +285,7 @@ structure Params : PARAMS = struct
     , log    = x
     , mirror = #mirror ps
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setMirror x (ps: t) : t =
@@ -282,6 +301,7 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = x
     , rawVid = #rawVid ps
+    , markov = #markov ps
     }
 
   fun setRawVid x (ps: t) : t =
@@ -297,5 +317,23 @@ structure Params : PARAMS = struct
     , log    = #log ps
     , mirror = #mirror ps
     , rawVid = SOME x
+    , markov = #markov ps
     }
+
+  fun setMarkov x (ps: t) : t =
+    { anim   = #anim ps
+    , ncuts  = #ncuts ps
+    , path   = #path ps
+    , outDir = #outDir ps
+    , tmpDir = #tmpDir ps
+    , maxDim = #maxDim ps
+    , rate   = #rate ps
+    , minReg = #minReg ps
+    , bg     = #bg ps
+    , log    = #log ps
+    , mirror = #mirror ps
+    , rawVid = #rawVid ps
+    , markov = SOME x
+    }
+
 end

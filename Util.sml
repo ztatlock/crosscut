@@ -21,6 +21,7 @@ signature UTIL = sig
   val part : ('a -> bool) -> 'a list -> 'a list * 'a list
   val take : int -> 'a list -> 'a list
   val drop : int -> 'a list -> 'a list
+  val split : int -> 'a list -> ('a list * 'a list) option
   val mem : ''a -> ''a list -> bool
   val rmSeqRep : ''a list -> ''a list
   val uniq : ''a list -> ''a list
@@ -47,6 +48,8 @@ signature UTIL = sig
   val i2str : (int * int) -> string
   val i3str : (int * int * int) -> string
   val lstr  : ('a -> string) -> 'a list -> string
+
+  val read : string -> string
 end
 
 structure Util : UTIL = struct
@@ -153,6 +156,13 @@ structure Util : UTIL = struct
   fun drop 0 xs = xs
     | drop n (x::xs) = drop (n - 1) xs
     | drop _ _ = raise (Util "bogus drop")
+
+  fun split 0 l = SOME ([], l)
+    | split n [] = NONE
+    | split n (x :: xs) =
+        case split (n - 1) xs
+          of NONE => NONE
+           | SOME (f, b) => SOME (x::f, b)
 
   fun mem x [] = false
     | mem x (y :: ys) = x = y orelse mem x ys
@@ -275,5 +285,13 @@ structure Util : UTIL = struct
     val s = String.concatWith ", " (List.map fmt l)
   in
     "[" ^ s ^ "]"
+  end
+
+  fun read path = let
+    val f = TextIO.openIn path
+    val t = TextIO.inputAll f
+  in
+    TextIO.closeIn f;
+    t
   end
 end

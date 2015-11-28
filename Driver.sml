@@ -36,6 +36,8 @@ fun parseCmdLine () = let
         loop xs (P.setMirror false ps)
     | loop ("--rawVid" :: p1 :: p2 :: xs) ps =
         loop xs (P.setRawVid (p1, p2) ps)
+    | loop ("--markov" :: x :: xs) ps =
+        loop xs (P.setMarkov (intify x) ps)
     | loop (x :: xs) ps =
         raise (Driver ("bogus arg: " ^ x))
 in
@@ -56,6 +58,14 @@ in
          val f2 = BinIO.openOut p2
        in
          XCutRaw.xcut (f1, f2, ps)
+       end
+     | NONE =>
+  case #markov ps
+    of SOME keySize => let
+         val model = Markov.mkModel (#path ps) keySize
+         val gen = Markov.gen model keySize 1000
+       in
+         print gen
        end
      | NONE => (
          Log.log "begin xcut";
