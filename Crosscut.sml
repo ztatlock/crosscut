@@ -195,38 +195,65 @@ structure Crosscut : CROSSCUT = struct
     (List.map (Util.curry op+ ramp) pts)
   end
 
-  fun readImg path (maxW, maxH) = let
-    (* TODO use tmp param *)
-    val tmp = Rand.name 10 ^ ".ppm"
-    val dim = Int.toString maxW ^ "x" ^ Int.toString maxH
+  fun readImg (params: P.t) = let
+    val tmp =
+      OS.Path.joinDirFile
+        { dir = #tmpDir params
+        , file = "xcut-" ^ Rand.name 10 ^ ".ppm"
+        }
+    val (w, h) = #maxDim params
+    val dim = Int.toString w ^ "x" ^ Int.toString h
     val cmd =
       "convert"
+      ^ " -strip"
       ^ " -depth 8"
       ^ " -resize " ^ dim
-      ^ " " ^ path
+      (* single quote path *)
+      ^ " '" ^ #path params ^ "'"
       ^ " " ^ tmp
-    val _ = OS.Process.system cmd
-    val img = PPM.read tmp
+    val status =
+      cmd |> OS.Process.system
+          |> Posix.Process.fromStatus
+    val success =
+      Posix.Process.fromStatus (OS.Process.success)
   in
-    OS.FileSys.remove tmp;
-    Log.log ("read image, size = " ^ Util.i2str (Img.dim img));
-    img
+    if status = success then
+      let
+        val img = PPM.read tmp
+      in
+        OS.FileSys.remove tmp;
+        Log.log ("read image, size = " ^ Util.i2str (Img.dim img));
+        img
+      end
+    else
+      raise (Crosscut ("readImg command failed:\n" ^ cmd))
   end
 
   fun animate frames rate out = let
+    val fs =
+      (* single quote frames *)
+      "'" ^ String.concatWith "' '" frames ^ "'"
     val cmd =
       "convert"
       ^ " -delay " ^ Int.toString rate
       ^ " -loop 0"
-      ^ " " ^ String.concatWith " " frames
-      ^ " " ^ out ^ ".gif"
+      ^ " " ^ fs
+      (* single quote gif *)
+      ^ " '" ^ out ^ ".gif'"
+    val status =
+      cmd |> OS.Process.system
+          |> Posix.Process.fromStatus
+    val success =
+      Posix.Process.fromStatus (OS.Process.success)
   in
-    OS.Process.system cmd
+    if status = success then
+      ()
+    else
+      raise (Crosscut ("animate command failed:\n" ^ cmd))
   end
 
   fun xcut (params: P.t) = let
-    val img =
-      readImg (#path params) (#maxDim params)
+    val img = readImg params
 
     fun writeFrame regs path = let
       val canvas =
@@ -298,7 +325,8 @@ structure Crosscut : CROSSCUT = struct
     end
     else (
       Log.log "write final output frame";
-      writeFrame regs (outName ^ ".ppm")
+      (* single quote outname *)
+      writeFrame regs ("'" ^ outName ^ ".ppm'")
     )
   end
 end
