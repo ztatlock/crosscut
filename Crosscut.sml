@@ -3,6 +3,7 @@ structure P = Params
 signature CROSSCUT = sig
   exception Crosscut of string
   val xcut : P.t -> unit
+  val animate : string list -> int -> string -> unit
 end
 
 structure Crosscut : CROSSCUT = struct
