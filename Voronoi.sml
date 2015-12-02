@@ -41,24 +41,52 @@ structure Voronoi : VORONOI = struct
   end
 
   fun voronoiRegs img sites = let
-    fun addPt site pt ((s, pts) :: regs) =
+    val sr = Array.fromList
+              (List.map (fn s => (s, [])) sites)
+    val n = Array.length sr
+    fun addPt site pt = let
+      fun loop i =
+        if i >= n then () else let
+          val (s, pts) = Array.sub (sr, i)
+        in
           if site = s then
-            (s, pt :: pts) :: regs
+            Array.update (sr, i, (s, pt :: pts))
           else
-            (s, pts) :: addPt site pt regs
-      | addPt _ _ _ =
-          raise Voronoi "addPt: no such site"
-    fun aux (pt, regs) = let
-      val s = Util.extreme (mcloser pt) sites
+            loop (i + 1)
+        end
     in
-      addPt s pt regs
+      loop 0
     end
-    val regs = List.map (fn s => (s, [])) sites
     val (w, h) = Img.dim img
-    val pts = Util.xprod (Util.range w) (Util.range h)
-    val regs = List.foldl aux regs pts
+    val (s, ss) =
+      case sites
+        of s :: ss => (s, ss)
+         | _ => raise (Voronoi "empty sites")
+    val _ = let
+      fun loop (x, y) =
+        if x >= w then
+          ()
+        else if y >= h then
+          loop (x + 1, 0)
+        else let
+          fun aux (s, (sMin, dMin)) = let
+            val d = manhattan (x, y) s
+          in
+            if d < dMin
+            then (s, d)
+            else (sMin, dMin)
+          end
+          val (s, _) =
+            List.foldl aux (s, manhattan (x, y) s) ss
+        in
+          addPt s (x, y);
+          loop (x, y + 1)
+        end
+    in
+      loop (0, 0)
+    end
   in
-    List.map #2 regs
+    Array.foldl (fn ((_, pts), acc) => pts :: acc) [] sr
   end
 
   fun avgPix img pts = let
