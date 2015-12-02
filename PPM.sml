@@ -102,7 +102,6 @@ structure PPM : PPM = struct
     raise (PPM ("read: exception from " ^ (#function ioe)
                 ^ " while trying to read: " ^ p))
 
-
   fun write (i: Img.t) p = let
     val f = TextIO.openOut p
     fun write s = TextIO.output (f, s)

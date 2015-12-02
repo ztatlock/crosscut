@@ -3,7 +3,9 @@ structure P = Params
 signature CROSSCUT = sig
   exception Crosscut of string
   val xcut : P.t -> unit
+  val readImg : P.t -> Img.t
   val animate : string list -> int -> string -> unit
+  val logPts : int list
 end
 
 structure Crosscut : CROSSCUT = struct
@@ -326,8 +328,7 @@ structure Crosscut : CROSSCUT = struct
     end
     else (
       Log.log "write final output frame";
-      (* single quote outname *)
-      writeFrame regs ("'" ^ outName ^ ".ppm'")
+      writeFrame regs (outName ^ ".ppm")
     )
   end
 end

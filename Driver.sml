@@ -38,6 +38,8 @@ fun parseCmdLine () = let
         loop xs (P.setRawVid (p1, p2) ps)
     | loop ("--markov" :: x :: xs) ps =
         loop xs (P.setMarkov (intify x) ps)
+    | loop ("--vrni" :: xs) ps =
+        loop xs (P.setVrni true ps)
     | loop (x :: xs) ps =
         raise (Driver ("bogus arg: " ^ x))
 in
@@ -67,7 +69,14 @@ in
        in
          print gen
        end
-     | NONE => (
+     | NONE =>
+  case #vrni ps
+    of true => (
+         Log.log "begin voronoi";
+         Voronoi.voronoi ps;
+         Log.log "end voronoi"
+       )
+     | false => (
          Log.log "begin xcut";
          Crosscut.xcut ps;
          Log.log "end xcut"
